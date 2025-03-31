@@ -1,0 +1,171 @@
+#! /usr/bin/env fralgo
+
+Importer "datelib" Alias dt
+Importer "termlib" Alias term
+
+Constante @ALGOROLOGE_AUTEUR  "Stéphane MEYER (Teegre)"
+Constante @ALGORLOGE_VERSION  "0.1"
+Constante @ALGORLOGE_DATE_MOD "2025/03/31"
+
+# █
+# █ Teegre :
+# █ Une horloge.
+# █
+
+# █████ █████ █████ █████ █████ █████
+# ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██
+# █████ █████ █████ █████ █████ █████
+# ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██
+# █████ █████ █████ █████ █████ █████ 
+#                            -- 88/88
+
+# Chiffres de l'horloge
+Constante CHIFFRES [["█████","██ ██","██ ██","██ ██","█████"], [" ███ ","  ██ ","  ██ ","  ██ ","  ██ "],["█████","   ██","█████","██   ","█████"],["█████","   ██","█████","   ██","█████"],["██ ██","██ ██","█████","   ██", "   ██"],["█████","██   ","█████","   ██","█████"],["█████","██   ","█████","██ ██","█████"],["█████","   ██","   ██","   ██","   ██"],["█████","██ ██","█████","██ ██","█████"],["█████","██ ██","█████","   ██","█████"]]
+# Largeur d'un chiffre (en caractères).
+Constante LC 5
+# Hauteur d'un chiffre (en caractères).
+Constante HC 5
+# Largeur totale de l'horloge.
+Constante LH 6 * LC + 5
+# Pause entre les affichages.
+Constante PAUSE 0.5
+
+Structure TChiffre
+  # Dizaines
+  D en Entier
+  # Unités
+  U en Entier
+FinStructure
+
+Variables H,M,S en TChiffre
+# Coordonnées de l'horloge.
+Variables Y,X en Entier
+# Forcer le réaffichage complet.
+Variable FORCER en Booléen
+# Suivre les changements de taille du terminal.
+Variables lt, ht en Entier
+
+Procédure Synchronise()
+  Variable n en Entier
+  Variable N en Chaîne
+  
+  n ← 1
+  TantQue n <> 0
+    N ← dt:Format(TempsUnix(), "%N")
+    n ← Entier(Gauche(N, 1))
+    Dormir(0.0625)
+  FinTantQue
+
+FinProcédure
+
+Procédure AfficheChiffre(x, c en Entier)
+  # Affiche le chiffre 'c' donné.
+  # 'x' est la colonne à laquelle doit débuter l'affichage.
+  Variable y en Entier
+
+  Pour y ← Y à Y + HC - 1
+    term:PosEcrire(y, x, CHIFFRES[c, y - Y])
+  y Suivant
+
+FinProcédure
+
+Procédure CentrageHorloge()
+  # Largeur et hauteur du terminal.
+  Constante LT term:Largeur()
+  Constante HT term:Hauteur()
+  # Coordonnées du bord supérieur gauche.
+  Y ← (HT - HC) / 2
+  X ← (LT - LH) / 2
+  FORCER ← (LT <> lt) OU (HT <> ht)
+  lt ← LT
+  ht ← HT
+FinProcédure
+
+Procédure AfficheHorloge()
+  # Affiche l'horloge.
+  # N'affiche que ce qui est nécessaire, c.à.d. :
+  # pas de réaffichage complet de l'horloge à chaque appel de la procédure.
+  Variables date, DATE, HEURE en Chaîne
+  Variables h, m, s en TChiffre
+  Variables y, x en Entier
+  
+  # Date courante du système (ex. lun. 31/03)
+  date ← std:Majus(dt:Format(TempsUnix(), "%a %d/%m"))
+  # Date formatée (ex. LU 31/03)
+  DATE ← Extraire(date, 1, 2) & Droite(date, 6)
+  # Heure courante du système.
+  HEURE ← dt:Format(TempsUnix(), "%H%M%S")
+
+  CentrageHorloge()
+
+  Si FORCER Alors
+    term:EffaceEcran()
+  FinSi
+
+  #   Dizaines                       Unités
+  h ← Entier(Extraire(HEURE, 1, 1)), Entier(Extraire(HEURE, 2, 1))
+  m ← Entier(Extraire(HEURE, 3, 1)), Entier(Extraire(HEURE, 4, 1))
+  s ← Entier(Extraire(HEURE, 5, 1)), Entier(Extraire(HEURE, 6, 1))
+
+  # Heures
+  ## Dizaines
+  Si h.D <> H.D OU FORCER Alors
+    x ← X
+    AfficheChiffre(x, h.D)
+    H.D ← h.D
+    term:PosEcrire(Y+HC, x - 8 + LH, DATE)
+  FinSi
+  ## Unités
+  Si h.U <> H.U OU FORCER Alors
+    x ← X + LC + 1
+    AfficheChiffre(x, h.U)
+    H.U ← h.U
+  FinSi
+  # Minutes
+  ## Dizaines
+  Si m.D <> M.D OU FORCER Alors
+    x ← X + 2 * LC + 2
+    AfficheChiffre(x, m.D)
+    M.D ← m.D
+  FinSi
+  ## Unités
+  Si m.U <> M.U OU FORCER Alors
+    x ← X + 3 * LC + 3
+    AfficheChiffre(x, m.U)
+    M.U ← m.U
+  FinSi
+  # Secondes
+  ## Dizaines
+  Si s.D <> S.D OU FORCER Alors
+    x ← X + 4 * LC + 4
+    AfficheChiffre(x, s.D)
+    S.D ← s.D
+  FinSi
+  ## Unités
+  Si s.U <> S.U OU FORCER Alors
+    x ← X + 5 * LC + 5
+    AfficheChiffre(x, s.U)
+    S.U ← s.U
+  FinSi
+
+  FORCER ← FAUX
+
+FinProcédure
+
+Début
+  term:CacheCur()
+  term:EffaceEcran()
+
+  lt ← term:Largeur()
+  ht ← term:Hauteur()
+
+  H ← -1,-1
+  M ← -1,-1
+  S ← -1,-1
+
+  TantQue VRAI
+    Synchronise()
+    AfficheHorloge()
+    Dormir(PAUSE)
+  FinTantQue
+Fin
