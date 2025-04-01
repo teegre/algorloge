@@ -74,7 +74,7 @@ Procédure CentrageHorloge()
   Constante LT term:Largeur()
   Constante HT term:Hauteur()
   # Coordonnées du bord supérieur gauche.
-  Y ← (HT - HC) / 2
+  Y ← (HT - HC + 3) / 2
   X ← (LT - LH) / 2
   # Suivi d'éventuels changements de taile du terminal.
   Si NON(FORCER) Alors
@@ -120,6 +120,8 @@ Procédure AfficheBarre(sbp en Entier)
 FinProcédure
 
 Procédure RéafficheBarre(sbp en Entier)
+  # Affiche graduellement la barre de progression
+  # jusqu'au nombre de secondes donné.
   Variable i en Entier
   Pour i ← 0 à sbp
     AfficheBarre(i)
@@ -128,6 +130,7 @@ Procédure RéafficheBarre(sbp en Entier)
 FinProcédure
 
 Procédure EffacerBarre()
+  # Efface graduellement la barre de progression.
   Variable i en Entier
   Variables y, x en Entier
   y ← Y - 2
@@ -136,7 +139,6 @@ Procédure EffacerBarre()
     term:PosEcrire(y, x + i, " ")
     Dormir(0.0078125)
   i Suivant
-
 FinProcédure
 
 Procédure AfficheHorloge()
