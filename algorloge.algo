@@ -167,7 +167,6 @@ Procédure AfficheHorloge()
   sbp ← Entier(Extraire(HEURE, 5, 2))
 
   Si FORCER Alors
-    term:PosEcrire(1,1,"FORCE !")
     term:EffaceEcran()
     RéafficheBarre(sbp)
   FinSi
