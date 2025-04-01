@@ -109,7 +109,7 @@ Procédure AfficheBarre(sbp en Entier)
     EffacerBarre()
     Terminer
   FinSi
-
+  
   C ← COULEURS[Entier((sbp * LH / 60) % 29)]
   couleur ← term:CT(C)
   y ← Y - 2
@@ -167,10 +167,11 @@ Procédure AfficheHorloge()
   sbp ← Entier(Extraire(HEURE, 5, 2))
 
   Si FORCER Alors
+    term:PosEcrire(1,1,"FORCE !")
     term:EffaceEcran()
     RéafficheBarre(sbp)
   FinSi
-
+  
   # Heures
   ## Dizaines
   Si h.D <> H.D OU FORCER Alors
