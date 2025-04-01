@@ -3,24 +3,32 @@
 Importer "datelib" Alias dt
 Importer "termlib" Alias term
 
-Constante @ALGOROLOGE_AUTEUR  "Stéphane MEYER (Teegre)"
+Constante @ALGORLOGE_AUTEUR   "Stéphane MEYER (Teegre)"
 Constante @ALGORLOGE_VERSION  "0.1"
-Constante @ALGORLOGE_DATE_MOD "2025/03/31"
-
-# █
-# █ Teegre :
-# █ Une horloge.
-# █
-
-# █████ █████ █████ █████ █████ █████
-# ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██
-# █████ █████ █████ █████ █████ █████
-# ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██
-# █████ █████ █████ █████ █████ █████ 
-#                            -- 88/88
+Constante @ALGORLOGE_DATE_MOD "2025/04/01"
 
 # Chiffres de l'horloge
-Constante CHIFFRES [["█████","██ ██","██ ██","██ ██","█████"], [" ███ ","  ██ ","  ██ ","  ██ ","  ██ "],["█████","   ██","█████","██   ","█████"],["█████","   ██","█████","   ██","█████"],["██ ██","██ ██","█████","   ██", "   ██"],["█████","██   ","█████","   ██","█████"],["█████","██   ","█████","██ ██","█████"],["█████","   ██","   ██","   ██","   ██"],["█████","██ ██","█████","██ ██","█████"],["█████","██ ██","█████","   ██","█████"]]
+Constante CHIFFRES [                         \\
+  ["█████","██ ██","██ ██","██ ██","█████"], \\
+  [" ███ ","  ██ ","  ██ ","  ██ ","  ██ "], \\
+  ["█████","   ██","█████","██   ","█████"], \\
+  ["█████","   ██","█████","   ██","█████"], \\
+  ["██ ██","██ ██","█████","   ██","   ██"], \\
+  ["█████","██   ","█████","   ██","█████"], \\
+  ["█████","██   ","█████","██ ██","█████"], \\
+  ["█████","   ██","   ██","   ██","   ██"], \\
+  ["█████","██ ██","█████","██ ██","█████"], \\
+  ["█████","██ ██","█████","   ██","█████"]  \\
+]
+# Couleurs de l'horloge.
+Constante COULEURS [                 \\
+  039, 038, 044, 043, 049, 048, 084, \\
+  083, 119, 118, 154, 148, 184, 178, \\
+  214, 208, 209, 203, 204, 198, 199, \\
+  163, 164, 128, 129, 093, 099, 063, \\
+  069, 033                           \\
+]
+
 # Largeur d'un chiffre (en caractères).
 Constante LC 5
 # Hauteur d'un chiffre (en caractères).
@@ -29,6 +37,9 @@ Constante HC 5
 Constante LH 6 * LC + 5
 # Pause entre les affichages.
 Constante PAUSE 0.5
+
+# Barre de progression.
+Constante TIC "█"
 
 Structure TChiffre
   # Dizaines
@@ -58,17 +69,6 @@ Procédure Synchronise()
 
 FinProcédure
 
-Procédure AfficheChiffre(x, c en Entier)
-  # Affiche le chiffre 'c' donné.
-  # 'x' est la colonne à laquelle doit débuter l'affichage.
-  Variable y en Entier
-
-  Pour y ← Y à Y + HC - 1
-    term:PosEcrire(y, x, CHIFFRES[c, y - Y])
-  y Suivant
-
-FinProcédure
-
 Procédure CentrageHorloge()
   # Largeur et hauteur du terminal.
   Constante LT term:Largeur()
@@ -76,9 +76,67 @@ Procédure CentrageHorloge()
   # Coordonnées du bord supérieur gauche.
   Y ← (HT - HC) / 2
   X ← (LT - LH) / 2
-  FORCER ← (LT <> lt) OU (HT <> ht)
+  # Suivi d'éventuels changements de taile du terminal.
+  Si NON(FORCER) Alors
+    FORCER ← (LT <> lt) OU (HT <> ht)
+  FinSi
   lt ← LT
   ht ← HT
+FinProcédure
+
+Procédure AfficheChiffre(x, c en Entier)
+  # Affiche le chiffre 'c' donné.
+  # 'x' est la colonne à laquelle doit débuter l'affichage.
+  Variable y en Entier
+  Variable couleur en Entier
+
+  couleur ← COULEURS[Entier(Aléa() * 30)]
+
+  Pour y ← Y à Y + HC - 1
+    term:PosEcrire(y, x, term:CT(couleur) & CHIFFRES[c, y - Y])
+  y Suivant
+
+FinProcédure
+
+Procédure AfficheBarre(sbp en Entier)
+  # Teegre :
+  # Affiche une barre de progression
+  # selon un nombre de secondes 'sbp' donné.
+  Variables C, y, x en Entier
+  Variable couleur en Chaîne
+
+  Si sbp = 0 Alors
+    EffacerBarre()
+    Terminer
+  FinSi
+
+  C ← COULEURS[Entier((sbp * LH / 60) % 29)]
+  couleur ← term:CT(C)
+  y ← Y - 2
+  x ← X + Entier(sbp * LH / 60)
+  term:PosEcrire(y, x, couleur & TIC & term:ANN)
+  term:EffaceFL()
+
+FinProcédure
+
+Procédure RéafficheBarre(sbp en Entier)
+  Variable i en Entier
+  Pour i ← 0 à sbp
+    AfficheBarre(i)
+    Dormir(0.0078125)
+  i Suivant
+FinProcédure
+
+Procédure EffacerBarre()
+  Variable i en Entier
+  Variables y, x en Entier
+  y ← Y - 2
+  x ← X
+  Pour i ← LH à 1 Pas -1
+    term:PosEcrire(y, x + i, " ")
+    Dormir(0.0078125)
+  i Suivant
+
 FinProcédure
 
 Procédure AfficheHorloge()
@@ -87,6 +145,9 @@ Procédure AfficheHorloge()
   # pas de réaffichage complet de l'horloge à chaque appel de la procédure.
   Variables date, DATE, HEURE en Chaîne
   Variables h, m, s en TChiffre
+  # Secondes pour la barre de progression.
+  Variable sbp en Entier
+  # Coordonnées.
   Variables y, x en Entier
   
   # Date courante du système (ex. lun. 31/03)
@@ -98,14 +159,17 @@ Procédure AfficheHorloge()
 
   CentrageHorloge()
 
-  Si FORCER Alors
-    term:EffaceEcran()
-  FinSi
-
   #   Dizaines                       Unités
   h ← Entier(Extraire(HEURE, 1, 1)), Entier(Extraire(HEURE, 2, 1))
   m ← Entier(Extraire(HEURE, 3, 1)), Entier(Extraire(HEURE, 4, 1))
   s ← Entier(Extraire(HEURE, 5, 1)), Entier(Extraire(HEURE, 6, 1))
+
+  sbp ← Entier(Extraire(HEURE, 5, 2))
+
+  Si FORCER Alors
+    term:EffaceEcran()
+    RéafficheBarre(sbp)
+  FinSi
 
   # Heures
   ## Dizaines
@@ -145,6 +209,7 @@ Procédure AfficheHorloge()
   Si s.U <> S.U OU FORCER Alors
     x ← X + 5 * LC + 5
     AfficheChiffre(x, s.U)
+    AfficheBarre(sbp)
     S.U ← s.U
   FinSi
 
@@ -153,8 +218,8 @@ Procédure AfficheHorloge()
 FinProcédure
 
 Début
+  term:SauveEcran()
   term:CacheCur()
-  term:EffaceEcran()
 
   lt ← term:Largeur()
   ht ← term:Hauteur()
@@ -162,6 +227,8 @@ Début
   H ← -1,-1
   M ← -1,-1
   S ← -1,-1
+
+  FORCER ← VRAI
 
   TantQue VRAI
     Synchronise()
