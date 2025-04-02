@@ -5,7 +5,7 @@ Importer "termlib" Alias term
 
 Constante @ALGORLOGE_AUTEUR   "Stéphane MEYER (Teegre)"
 Constante @ALGORLOGE_VERSION  "0.1"
-Constante @ALGORLOGE_DATE_MOD "2025/04/01"
+Constante @ALGORLOGE_DATE_MOD "2025/04/02"
 
 # Chiffres de l'horloge
 Constante CHIFFRES [                         \\
@@ -35,10 +35,13 @@ Constante LC 5
 Constante HC 5
 # Largeur totale de l'horloge.
 Constante LH 6 * LC + 5
+
+Constante DUREE_SYNC 1.0/16
+Constante DUREE_ANIM 1.0/128
 # Pause entre les affichages.
 Constante PAUSE 0.5
 
-# Barre de progression.
+# Segment de la barre de progression.
 Constante TIC "█"
 
 Structure TChiffre
@@ -48,13 +51,25 @@ Structure TChiffre
   U en Entier
 FinStructure
 
-Variables H,M,S en TChiffre
-# Coordonnées de l'horloge.
-Variables Y,X en Entier
+# Etat de l'horloge.
+Structure THorloge
+  H en TChiffre
+  M en TChiffre
+  S en TChiffre
+  # Coordonnées de l'horloge.
+  Y en Entier
+  X en Entier
+  # Suivre les changements de taille du terminal.
+  lt en Entier
+  ht en Entier
+FinStructure
+
 # Forcer le réaffichage complet.
 Variable FORCER en Booléen
-# Suivre les changements de taille du terminal.
-Variables lt, ht en Entier
+
+Variables début, fin en Numérique
+
+Variable horloge en THorloge
 
 Procédure Synchronise()
   Variable n en Entier
@@ -64,9 +79,8 @@ Procédure Synchronise()
   TantQue n <> 0
     N ← dt:Format(TempsUnix(), "%N")
     n ← Entier(Gauche(N, 1))
-    Dormir(0.0625)
+    Dormir(DUREE_SYNC)
   FinTantQue
-
 FinProcédure
 
 Procédure CentrageHorloge()
@@ -74,14 +88,14 @@ Procédure CentrageHorloge()
   Constante LT term:Largeur()
   Constante HT term:Hauteur()
   # Coordonnées du bord supérieur gauche.
-  Y ← (HT - HC + 3) / 2
-  X ← (LT - LH) / 2
+  horloge.Y ← (HT - HC + 3) / 2
+  horloge.X ← (LT - LH) / 2
   # Suivi d'éventuels changements de taile du terminal.
   Si NON(FORCER) Alors
-    FORCER ← (LT <> lt) OU (HT <> ht)
+    FORCER ← (LT <> horloge.lt) OU (HT <> horloge.ht)
   FinSi
-  lt ← LT
-  ht ← HT
+  horloge.lt ← LT
+  horloge.ht ← HT
 FinProcédure
 
 Procédure AfficheChiffre(x, c en Entier)
@@ -92,10 +106,9 @@ Procédure AfficheChiffre(x, c en Entier)
 
   couleur ← COULEURS[Entier(Aléa() * 30)]
 
-  Pour y ← Y à Y + HC - 1
-    term:PosEcrire(y, x, term:CT(couleur) & CHIFFRES[c, y - Y])
+  Pour y ← horloge.Y à horloge.Y + HC - 1
+    term:PosEcrire(y, x, term:CT(couleur) & CHIFFRES[c, y - horloge.Y])
   y Suivant
-
 FinProcédure
 
 Procédure AfficheBarre(sbp en Entier)
@@ -112,11 +125,10 @@ Procédure AfficheBarre(sbp en Entier)
   
   C ← COULEURS[Entier((sbp * LH / 60) % 29)]
   couleur ← term:CT(C)
-  y ← Y - 2
-  x ← X + Entier(sbp * LH / 60)
+  y ← horloge.Y - 2
+  x ← horloge.X + Entier(sbp * LH / 60)
   term:PosEcrire(y, x, couleur & TIC & term:ANN)
   term:EffaceFL()
-
 FinProcédure
 
 Procédure RéafficheBarre(sbp en Entier)
@@ -125,7 +137,7 @@ Procédure RéafficheBarre(sbp en Entier)
   Variable i en Entier
   Pour i ← 0 à sbp
     AfficheBarre(i)
-    Dormir(0.0078125)
+    Dormir(DUREE_ANIM)
   i Suivant
 FinProcédure
 
@@ -133,11 +145,11 @@ Procédure EffacerBarre()
   # Efface graduellement la barre de progression.
   Variable i en Entier
   Variables y, x en Entier
-  y ← Y - 2
-  x ← X
+  y ← horloge.Y - 2
+  x ← horloge.X
   Pour i ← LH à 1 Pas -1
     term:PosEcrire(y, x + i, " ")
-    Dormir(0.0078125)
+    Dormir(DUREE_ANIM)
   i Suivant
 FinProcédure
 
@@ -145,7 +157,7 @@ Procédure AfficheHorloge()
   # Affiche l'horloge.
   # N'affiche que ce qui est nécessaire, c.à.d. :
   # pas de réaffichage complet de l'horloge à chaque appel de la procédure.
-  Variables date, DATE, HEURE en Chaîne
+  Variables date, DATE, HEURE, ZH en Chaîne
   Variables h, m, s en TChiffre
   # Secondes pour la barre de progression.
   Variable sbp en Entier
@@ -158,6 +170,8 @@ Procédure AfficheHorloge()
   DATE ← Extraire(date, 1, 2) & Droite(date, 6)
   # Heure courante du système.
   HEURE ← dt:Format(TempsUnix(), "%H%M%S")
+  # Fuseau Horaire
+  ZH ← ZoneHoraire(TempsUnix())
 
   CentrageHorloge()
 
@@ -175,66 +189,68 @@ Procédure AfficheHorloge()
   
   # Heures
   ## Dizaines
-  Si h.D <> H.D OU FORCER Alors
-    x ← X
+  Si h.D <> horloge.H.D OU FORCER Alors
+    x ← horloge.X
     AfficheChiffre(x, h.D)
-    H.D ← h.D
-    term:PosEcrire(Y+HC, x - 8 + LH, DATE)
+    horloge.H.D ← h.D
+    term:PosEcrire(horloge.Y+HC, x, ZH)
+    term:PosEcrire(horloge.Y+HC, x - 8 + LH, DATE)
   FinSi
   ## Unités
-  Si h.U <> H.U OU FORCER Alors
-    x ← X + LC + 1
+  Si h.U <> horloge.H.U OU FORCER Alors
+    x ← horloge.X + LC + 1
     AfficheChiffre(x, h.U)
-    H.U ← h.U
+    horloge.H.U ← h.U
   FinSi
   # Minutes
   ## Dizaines
-  Si m.D <> M.D OU FORCER Alors
-    x ← X + 2 * LC + 2
+  Si m.D <> horloge.M.D OU FORCER Alors
+    x ← horloge.X + 2 * LC + 2
     AfficheChiffre(x, m.D)
-    M.D ← m.D
+    horloge.M.D ← m.D
   FinSi
   ## Unités
-  Si m.U <> M.U OU FORCER Alors
-    x ← X + 3 * LC + 3
+  Si m.U <> horloge.M.U OU FORCER Alors
+    x ← horloge.X + 3 * LC + 3
     AfficheChiffre(x, m.U)
-    M.U ← m.U
+    horloge.M.U ← m.U
   FinSi
   # Secondes
   ## Dizaines
-  Si s.D <> S.D OU FORCER Alors
-    x ← X + 4 * LC + 4
+  Si s.D <> horloge.S.D OU FORCER Alors
+    x ← horloge.X + 4 * LC + 4
     AfficheChiffre(x, s.D)
-    S.D ← s.D
+    horloge.S.D ← s.D
   FinSi
   ## Unités
-  Si s.U <> S.U OU FORCER Alors
-    x ← X + 5 * LC + 5
+  Si s.U <> horloge.S.U OU FORCER Alors
+    x ← horloge.X + 5 * LC + 5
     AfficheChiffre(x, s.U)
     AfficheBarre(sbp)
-    S.U ← s.U
+    horloge.S.U ← s.U
   FinSi
 
   FORCER ← FAUX
-
 FinProcédure
 
 Début
   term:SauveEcran()
   term:CacheCur()
 
-  lt ← term:Largeur()
-  ht ← term:Hauteur()
+  horloge.lt ← term:Largeur()
+  horloge.ht ← term:Hauteur()
 
-  H ← -1,-1
-  M ← -1,-1
-  S ← -1,-1
+  horloge.H ← -1,-1
+  horloge.M ← -1,-1
+  horloge.S ← -1,-1
 
   FORCER ← VRAI
 
   TantQue VRAI
+    début ← TempsUnix()
     Synchronise()
     AfficheHorloge()
-    Dormir(PAUSE)
+    fin ← TempsUnix()
+    Dormir(std:Min(fin - début, PAUSE))
   FinTantQue
 Fin
