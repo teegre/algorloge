@@ -90,7 +90,7 @@ Procédure CentrageHorloge()
   # Coordonnées du bord supérieur gauche.
   horloge.Y ← (HT - HC + 3) / 2
   horloge.X ← (LT - LH) / 2
-  # Suivi d'éventuels changements de taile du terminal.
+  # Suivi d'éventuels changements de taille du terminal.
   Si NON(FORCER) Alors
     FORCER ← (LT <> horloge.lt) OU (HT <> horloge.ht)
   FinSi
@@ -112,7 +112,6 @@ Procédure AfficheChiffre(x, c en Entier)
 FinProcédure
 
 Procédure AfficheBarre(sbp en Entier)
-  # Teegre :
   # Affiche une barre de progression
   # selon un nombre de secondes 'sbp' donné.
   Variables C, y, x en Entier
