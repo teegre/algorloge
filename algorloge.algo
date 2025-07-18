@@ -72,6 +72,9 @@ Variables début, fin en Numérique
 Variable horloge en THorloge
 
 Procédure Synchronise()
+  # Applique un court délai avant l'affichage de l'horloge.
+  # → Si plusieurs `algorloges` sont affichées en même temps,
+  # elle sont synchronisées.
   Variable n en Entier
   Variable N en Chaîne
   
@@ -100,7 +103,7 @@ FinProcédure
 
 Procédure AfficheChiffre(x, c en Entier)
   # Affiche le chiffre 'c' donné.
-  # 'x' est la colonne à laquelle doit débuter l'affichage.
+  # 'x' est la colonne où doit débuter l'affichage.
   Variable y en Entier
   Variable couleur en Entier
 
