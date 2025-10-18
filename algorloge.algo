@@ -1,11 +1,12 @@
 #! /usr/bin/env fralgo
 
+Importer "stdlib"  Alias std
 Importer "datelib" Alias dt
 Importer "termlib" Alias term
 
 Constante @ALGORLOGE_AUTEUR   "Stéphane MEYER (Teegre)"
 Constante @ALGORLOGE_VERSION  "0.1"
-Constante @ALGORLOGE_DATE_MOD "2025/04/02"
+Constante @ALGORLOGE_DATE_MOD "2025/10/18"
 
 # Chiffres de l'horloge
 Constante CHIFFRES [                         \\
