@@ -6,7 +6,7 @@ Importer "termlib" Alias term
 
 Constante @ALGORLOGE_AUTEUR   "Stéphane MEYER (Teegre)"
 Constante @ALGORLOGE_VERSION  "0.1"
-Constante @ALGORLOGE_DATE_MOD "2025/10/18"
+Constante @ALGORLOGE_DATE_MOD "2025/10/28"
 
 # Chiffres de l'horloge
 Constante CHIFFRES [                         \\
@@ -196,7 +196,6 @@ Procédure AfficheHorloge()
     x ← horloge.X
     AfficheChiffre(x, h.D)
     horloge.H.D ← h.D
-    term:PosEcrire(horloge.Y+HC, x, ZH)
     term:PosEcrire(horloge.Y+HC, x - 8 + LH, DATE)
   FinSi
   ## Unités
@@ -204,6 +203,7 @@ Procédure AfficheHorloge()
     x ← horloge.X + LC + 1
     AfficheChiffre(x, h.U)
     horloge.H.U ← h.U
+    term:PosEcrire(horloge.Y+HC, horloge.X, ZH)
   FinSi
   # Minutes
   ## Dizaines
