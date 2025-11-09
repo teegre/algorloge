@@ -6,7 +6,7 @@ Importer "termlib" Alias term
 
 Constante @ALGORLOGE_AUTEUR   "Stéphane MEYER (Teegre)"
 Constante @ALGORLOGE_VERSION  "0.1"
-Constante @ALGORLOGE_DATE_MOD "2025/10/28"
+Constante @ALGORLOGE_DATE_MOD "2025/11/09"
 
 # Chiffres de l'horloge
 Constante CHIFFRES [                         \\
@@ -170,7 +170,7 @@ Procédure AfficheHorloge()
   # Date courante du système (ex. lun. 31/03)
   date ← std:Majus(dt:Format(TempsUnix(), "%a %d/%m"))
   # Date formatée (ex. LU 31/03)
-  DATE ← Extraire(date, 1, 2) & Droite(date, 6)
+  DATE ← Gauche(date, 2) & Droite(date, 6)
   # Heure courante du système.
   HEURE ← dt:Format(TempsUnix(), "%H%M%S")
   # Fuseau Horaire
